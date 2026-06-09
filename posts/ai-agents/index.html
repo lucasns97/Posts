@@ -17,9 +17,10 @@ html,body{height:100%}
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--fog);color:var(--ink);overflow:hidden}
 .deck{height:100vh;width:100vw;position:relative}
 .slide{
-  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:safe center;
   padding:6vh 8vw;opacity:0;transform:translateX(40px);
-  transition:opacity .45s ease,transform .45s ease;pointer-events:none;overflow-y:auto;
+  transition:opacity .45s ease,transform .45s ease;pointer-events:none;
+  overflow-y:auto;overflow-x:hidden;
 }
 .slide.active{opacity:1;transform:translateX(0);pointer-events:auto}
 .slide.prev{transform:translateX(-40px)}
@@ -109,6 +110,16 @@ strong{color:var(--ink)}.accent{color:var(--cobalt)}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.6rem}
 @media(max-width:720px){.duo{grid-template-columns:1fr}}
 .duo .card h3{color:var(--cobalt)}
+/* long titles must wrap rather than overflow */
+h1,h2{overflow-wrap:break-word;word-break:break-word}
+/* mobile: tighter padding + smaller headings so slides overflow less */
+@media(max-width:560px){
+  .slide{padding:4vh 6vw 7vh}
+  h1{font-size:clamp(1.9rem,8vw,2.6rem)}
+  h2{font-size:clamp(1.4rem,6vw,2rem);margin-bottom:1rem}
+  .nav{padding:.7rem 6vw}
+  .loop-wrap{gap:1.4rem}
+}
 </style>
 </head>
 <body>
