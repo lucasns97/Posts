@@ -447,16 +447,17 @@ function buildCover(l) {
   <h1>${t.title}</h1>
   <p class="lead cover-sub">${t.subtitle}</p>
   <div class="cover-lang">
-    <div class="lang-card" tabindex="0" onclick="setLang('en')" onkeydown="if(event.key==='Enter')setLang('en')">
+    <button type="button" class="lang-card" onclick="setLang('en')">
       <div class="lc-flag">🇺🇸</div>
       <div class="lc-label">English</div>
       <div class="lc-sub">Read in English</div>
-    </div>
-    <div class="lang-card" tabindex="0" onclick="setLang('pt')" onkeydown="if(event.key==='Enter')setLang('pt')">
+    </button>
+    <button type="button" class="lang-card" onclick="setLang('pt')">
       <div class="lc-flag">🇧🇷</div>
       <div class="lc-label">Português</div>
       <div class="lc-sub">Ler em Português</div>
-    </div>
+    </button>
+  </div>
   </div>
   <p class="hint">${t.hint}</p>
 </section>`;
