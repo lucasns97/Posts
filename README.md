@@ -3,6 +3,18 @@
 Static, self-contained HTML pages published with **GitHub Pages** to accompany
 content shared on LinkedIn. Live at [lucasns97.github.io/Posts](https://lucasns97.github.io/Posts/).
 
+## GitHub Pages deploy
+
+This repository is a **project page**, so the public URL is:
+
+- `https://lucasns97.github.io/Posts/`
+
+The root URL `https://lucasns97.github.io/` belongs to the user site repository
+(`lucasns97.github.io`) and does not serve this project directly.
+
+Deployment is automated by GitHub Actions via `.github/workflows/deploy-pages.yml`
+on every push to `main`.
+
 ## Structure
 
 ```
