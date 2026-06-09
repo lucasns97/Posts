@@ -601,9 +601,16 @@ function animateBars() {
 // ─── NAV ─────────────────────────────────────────────────────────────────────
 document.getElementById('nextBtn').onclick = () => go(cur + 1);
 document.getElementById('prevBtn').onclick = () => go(cur - 1);
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === ' ') go(cur + 1);
+document.addEventListener('keydown', (e) => {
+  const el = e.target;
+  const isInteractive = el instanceof HTMLElement && (
+    el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(el.tagName)
+  );
+  if (isInteractive) return;
+
+  if (e.key === 'ArrowRight') go(cur + 1);
   if (e.key === 'ArrowLeft') go(cur - 1);
+  if (e.key === ' ') { e.preventDefault(); go(cur + 1); }
 });
 let tx = null;
 document.addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
