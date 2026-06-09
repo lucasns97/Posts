@@ -56,6 +56,9 @@ strong{color:var(--ink)}.accent{color:var(--cobalt)}
 /* cover */
 .cover-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.78rem;border:1.5px solid var(--cobalt);color:var(--cobalt);border-radius:999px;padding:.35rem .9rem;margin-bottom:1.6rem}
 .cover-sub{margin-top:1.4rem}
+.cover-author{margin-top:1.5rem;padding-left:.9rem;border-left:2px solid var(--cobalt)}
+.cover-author .ca-name{font-family:'Sora',sans-serif;font-weight:600;font-size:1.05rem;color:var(--ink)}
+.cover-author .ca-sub{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.04em;color:var(--ink-soft);margin-top:.15rem}
 .cover-lang{display:flex;gap:.8rem;margin-top:2rem;flex-wrap:wrap}
 .lang-card{border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:1rem 1.3rem;cursor:pointer;transition:border-color .25s,box-shadow .25s;min-width:160px}
 .lang-card:hover,.lang-card:focus-visible{border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(39,66,232,.12)}
@@ -446,6 +449,10 @@ function buildCover(l) {
   <span class="cover-tag">${t.tag}</span>
   <h1>${t.title}</h1>
   <p class="lead cover-sub">${t.subtitle}</p>
+  <div class="cover-author">
+    <div class="ca-name">Lucas Nunes Sequeira</div>
+    <div class="ca-sub">${l === 'pt' ? 'Coautorado por IA' : 'Co-authored by AI'}</div>
+  </div>
   <div class="cover-lang">
     <button type="button" class="lang-card" onclick="setLang('en')">
       <div class="lc-flag">🇺🇸</div>
