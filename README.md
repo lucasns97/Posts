@@ -1,7 +1,7 @@
 # Posts
 
 Static, self-contained HTML pages published with **GitHub Pages** to accompany
-content shared on LinkedIn. Live at <https://lucasns97.github.io/Posts/>.
+content shared on LinkedIn. Live at [lucasns97.github.io/Posts](https://lucasns97.github.io/Posts/).
 
 ## Structure
 
@@ -23,6 +23,7 @@ content shared on LinkedIn. Live at <https://lucasns97.github.io/Posts/>.
 
 ## Current posts
 
-- **Agentes de IA: do texto à ação** — `posts/ai-agents/` — navigable
-  presentation deck (pt-BR). Its slide 8 multi-agent demo links to the companion
-  data page **Smartphone Access by Generation** (`smartphone-per-gen.html`).
+- **AI Agents: from text to action / Agentes de IA: do texto à ação** —
+  `posts/ai-agents/` — navigable presentation deck with an in-page **EN/PT**
+  language toggle. Its slide 8 multi-agent demo links to the companion data page
+  **Smartphone Access by Generation** (`smartphone-per-gen.html`).
