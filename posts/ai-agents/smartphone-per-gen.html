@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smartphone Access by Generation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f6ef;
+      --ink: #1f2a2a;
+      --muted: #56605f;
+      --panel: #fffdf8;
+      --line: #d9d4c5;
+      --accent-a: #e76f51;
+      --accent-b: #2a9d8f;
+      --accent-c: #e9c46a;
+      --accent-d: #264653;
+      --warn: #b23a48;
+      --ok: #2f6f54;
+      --shadow: 0 18px 35px rgba(31, 42, 42, 0.09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(231, 111, 81, 0.17), transparent 28%),
+        radial-gradient(circle at 88% 15%, rgba(42, 157, 143, 0.16), transparent 24%),
+        radial-gradient(circle at 50% 92%, rgba(233, 196, 106, 0.24), transparent 33%),
+        var(--bg);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      width: min(1120px, 92vw);
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, rgba(38, 70, 83, 0.93), rgba(42, 157, 143, 0.9));
+      color: #f9fff8;
+      border-radius: calc(var(--radius) + 6px);
+      padding: 34px 28px 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -44px;
+      top: -54px;
+      width: 220px;
+      height: 220px;
+      background: rgba(233, 196, 106, 0.26);
+      border-radius: 52% 48% 42% 58%;
+      transform: rotate(18deg);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(1.9rem, 3vw, 3.1rem);
+      line-height: 1.06;
+      letter-spacing: 0.2px;
+      max-width: 18ch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 70ch;
+      color: rgba(249, 255, 248, 0.9);
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pill {
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      border: 1px solid rgba(249, 255, 248, 0.33);
+      background: rgba(249, 255, 248, 0.1);
+    }
+
+    .alert {
+      margin-top: 18px;
+      background: #fff6f2;
+      border: 1px solid #f2c2b6;
+      color: #6a2d1f;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.93rem;
+    }
+
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .kpis {
+      grid-column: span 12;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .kpi {
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .kpi .v {
+      display: block;
+      font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--accent-d);
+    }
+
+    .kpi .l {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .chart-lg { grid-column: span 8; }
+    .side { grid-column: span 4; }
+    .full { grid-column: span 12; }
+
+    h2 {
+      margin: 2px 0 12px;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+    }
+
+    .caption {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .legend-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 290px;
+    }
+
+    .chart-box.tall {
+      height: 320px;
+    }
+
+    .chart-box.short {
+      height: 240px;
+    }
+
+    .chart-box canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .timeline {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+      border-left: 2px solid #d8e5e1;
+      margin-left: 8px;
+    }
+
+    .timeline li {
+      position: relative;
+      padding: 0 0 14px 16px;
+      color: var(--ink);
+    }
+
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: -7px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-b);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--accent-b);
+    }
+
+    .flag-est { color: var(--warn); font-weight: 700; }
+    .flag-ok { color: var(--ok); font-weight: 700; }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 6px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 620px;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+
+    th { color: #3d4746; font-weight: 700; }
+    td small { color: var(--muted); }
+
+    .sources a {
+      color: #1d5e57;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+      word-break: break-word;
+    }
+
+    .foot {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 980px) {
+      .chart-lg, .side, .full, .kpis { grid-column: span 12; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { width: 94vw; }
+      .hero { padding: 26px 18px 20px; }
+      .card { padding: 14px; }
+      .kpis { grid-template-columns: 1fr; }
+      table { min-width: 560px; }
+      .chart-box,
+      .chart-box.tall,
+      .chart-box.short {
+        height: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>How Is Smartphone Access Distributed Across Generations?</h1>
+      <p class="subtitle">
+        A consolidated view of ownership, platform preference, first-phone timing, and usage intensity.
+        Data prioritizes 2023-2026 sources, with explicit confidence flags where generation-level data is incomplete.
+        This was authored by GPT-5.3-Codex.
+      </p>
+      <div class="meta">
+        <span class="pill">Scope: Global + Brazil</span>
+        <span class="pill">Generations: Gen Z, Millennials, Gen X, Boomers, Silent</span>
+        <span class="pill">Update date: 2026-06-09</span>
+      </div>
+      <div class="alert">
+        <strong>Data gap note:</strong> high-quality, open generation-level datasets for <em>iOS vs Android split</em> and
+        <em>age of first smartphone</em> are limited. Where needed, this page marks values as <span class="flag-est">estimated/proxy</span>
+        or leaves them unavailable rather than inventing numbers.
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card kpis">
+        <div class="kpi">
+          <span class="v">91%</span>
+          <span class="l">U.S. adults with smartphones (Pew, 2025)</span>
+        </div>
+        <div class="kpi">
+          <span class="v">5.28B</span>
+          <span class="l">Global smartphone users (secondary compilation, 2025)</span>
+        </div>
+        <div class="kpi">
+          <span class="v">100%</span>
+          <span class="l">Brazil internet users 16-59 using cellphone to access internet (Cetic, 2024)</span>
+        </div>
+        <div class="kpi">
+          <span class="v">9h</span>
+          <span class="l">Approx. Gen Z daily screen time (secondary synthesis, 2026)</span>
+        </div>
+      </div>
+
+      <article class="card chart-lg">
+        <h2>Smartphone Ownership Rate by Generation (%)</h2>
+        <div class="chart-box short">
+          <canvas id="ownershipChart"></canvas>
+        </div>
+        <p class="legend-note">
+          <span class="flag-ok">High confidence:</span> age-band values from Pew 2025.
+          <span class="flag-est">Estimated mapping:</span> generation bars map Pew age bands to generation cohorts; Silent value unavailable in source.
+        </p>
+      </article>
+
+      <aside class="card side">
+        <h2>Generation Boundaries (Pew)</h2>
+        <ul class="timeline">
+          <li><strong>Gen Z</strong>: 1997-2012</li>
+          <li><strong>Millennials</strong>: 1981-1996</li>
+          <li><strong>Gen X</strong>: 1965-1980</li>
+          <li><strong>Boomers</strong>: 1946-1964</li>
+          <li><strong>Silent</strong>: 1928-1945</li>
+        </ul>
+        <p class="caption">Source: Pew generational definitions and conventional U.S. cohort boundaries.</p>
+      </aside>
+
+      <article class="card chart-lg">
+        <h2>iOS vs Android Split by Generation (Available Data Points)</h2>
+        <div class="chart-box tall">
+          <canvas id="platformChart"></canvas>
+        </div>
+        <p class="legend-note">
+          Values shown come from publicly quoted Statista-derived figures (2023) republished in secondary analyses.
+          Missing bars indicate no robust open value found for that generation.
+        </p>
+      </article>
+
+      <aside class="card side">
+        <h2>Age of First Smartphone</h2>
+        <ul class="timeline">
+          <li><strong>2019 U.S. children survey:</strong> most first phones at ages <strong>11-12</strong>.</li>
+          <li><strong>2022 Stanford cohort:</strong> 25% by <strong>10.7</strong>, 75% by <strong>12.6</strong>.</li>
+          <li><strong>2024 Harris Poll (reported):</strong> average first phone at <strong>11.9</strong>.</li>
+          <li><strong>2026 secondary claim:</strong> Gen Z first phone around <strong>10.3</strong> <span class="flag-est">(low confidence)</span>.</li>
+        </ul>
+        <p class="caption">This block uses mixed-method evidence because consistent generation-by-generation global data is not openly published.</p>
+      </aside>
+
+      <article class="card full">
+        <h2>Daily Screen Time by Generation (Hours/Day)</h2>
+        <div class="chart-box short">
+          <canvas id="screenTimeChart"></canvas>
+        </div>
+        <p class="legend-note">
+          Consolidated from secondary statistical digests that cite MagnetABA, DataReportal, and related reports.
+          Treat as directional, not official census-grade measurement.
+        </p>
+      </article>
+
+      <article class="card full">
+        <h2>Brazil: Mobile Access by Age (Cetic TIC Domicílios 2024)</h2>
+        <div class="chart-box short">
+          <canvas id="brazilChart"></canvas>
+        </div>
+        <p class="caption">
+          Interpretation: smartphone/cellphone internet access is near-universal among Brazilian internet users, but exclusive cellphone dependence rises with age.
+        </p>
+      </article>
+
+      <article class="card full sources">
+        <h2>Consolidated Data Register (Value, Year, Source, URL)</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value(s)</th>
+                <th>Year</th>
+                <th>Source</th>
+                <th>URL</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Generation boundaries</td>
+                <td>Gen Z 1997+; Millennials 1981-1996; Gen X 1965-1980; Boomers 1946-1964</td>
+                <td>2019 (updated notes later)</td>
+                <td>Pew Research Center</td>
+                <td><a href="https://www.pewresearch.org/short-reads/2019/01/17/where-millennials-end-and-generation-z-begins/">pewresearch.org/.../where-millennials-end...</a></td>
+                <td><span class="flag-ok">High</span></td>
+              </tr>
+              <tr>
+                <td>Smartphone ownership by age (U.S.)</td>
+                <td>18-29: 97%; 30-49: 96%; 50-64: 90%; 65+: 78%</td>
+                <td>2025</td>
+                <td>Pew Mobile Fact Sheet</td>
+                <td><a href="https://www.pewresearch.org/internet/fact-sheet/mobile/">pewresearch.org/internet/fact-sheet/mobile/</a></td>
+                <td><span class="flag-ok">High</span></td>
+              </tr>
+              <tr>
+                <td>iOS vs Android by generation (partial)</td>
+                <td>Gen X Android ~60%; Gen Z Android ~57%; Millennials iPhone ~35%; Gen Z iPhone ~31%</td>
+                <td>2023 (published in 2025 summaries)</td>
+                <td>Statista (quoted), Sci-Tech Today summary</td>
+                <td><a href="https://www.sci-tech-today.com/stats/iphone-vs-android-user-statistics/">sci-tech-today.com/.../iphone-vs-android-user-statistics/</a></td>
+                <td><span class="flag-est">Medium-Low</span></td>
+              </tr>
+              <tr>
+                <td>Age at first smartphone</td>
+                <td>Most children get first phone at 11-12; Stanford quartiles 10.7/12.6; Harris reported average 11.9</td>
+                <td>2019-2024</td>
+                <td>Stanford Medicine, Statista snippet, survey summaries</td>
+                <td><a href="https://med.stanford.edu/news/all-news/2022/11/children-mobile-phone-age.html">med.stanford.edu/.../children-mobile-phone-age.html</a></td>
+                <td><span class="flag-est">Medium</span></td>
+              </tr>
+              <tr>
+                <td>Screen time by generation</td>
+                <td>Gen Z ~9h; Millennials 6h42m (or 205m alt source); Gen X 4h10m (or 169m alt source); Boomers 3h31m (or 136m alt source)</td>
+                <td>2025-2026</td>
+                <td>DemandSage, SlickText (secondary compilations)</td>
+                <td><a href="https://www.demandsage.com/screen-time-statistics/">demandsage.com/screen-time-statistics/</a><br><a href="https://www.slicktext.com/blog/2023/01/30-key-screen-time-statistics-for-2022-2023/">slicktext.com/.../30-key-screen-time-statistics...</a></td>
+                <td><span class="flag-est">Medium-Low</span></td>
+              </tr>
+              <tr>
+                <td>Brazil cellphone internet access by age</td>
+                <td>10-15: 98%; 16-24: 100%; 25-34: 100%; 35-44: 100%; 45-59: 100%; 60+: 99%</td>
+                <td>2024</td>
+                <td>Cetic.br TIC Domicílios C16</td>
+                <td><a href="https://cetic.br/pt/tics/domicilios/2024/individuos/C16/">cetic.br/.../2024/individuos/C16/</a></td>
+                <td><span class="flag-ok">High</span></td>
+              </tr>
+              <tr>
+                <td>Brazil internet users relying only on cellphone</td>
+                <td>10-15: 66%; 16-24: 47%; 25-34: 49%; 35-44: 56%; 45-59: 68%; 60+: 80%</td>
+                <td>2024</td>
+                <td>Cetic.br TIC Domicílios C16A</td>
+                <td><a href="https://cetic.br/pt/tics/domicilios/2024/individuos/C16A/">cetic.br/.../2024/individuos/C16A/</a></td>
+                <td><span class="flag-ok">High</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="foot">
+          Method rule used on this page: when multiple sources disagree, the most recent and most transparent source is preferred.
+          Where disagreement remained unresolved, values are labeled as estimated/proxy or left blank.
+        </p>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const sharedGrid = {
+      color: 'rgba(38, 70, 83, 0.12)'
+    };
+
+    const sharedTicks = {
+      color: '#3f4a49',
+      font: { family: 'Space Grotesk', size: 12 }
+    };
+
+    const tooltipTheme = {
+      backgroundColor: 'rgba(24, 33, 33, 0.95)',
+      titleColor: '#fff',
+      bodyColor: '#f2f4f4',
+      borderColor: 'rgba(255,255,255,0.12)',
+      borderWidth: 1,
+      padding: 10,
+      cornerRadius: 10
+    };
+
+    function createOrReplaceChart(canvasId, config) {
+      const canvas = document.getElementById(canvasId);
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) {
+        existingChart.destroy();
+      }
+      return new Chart(canvas, config);
+    }
+
+    createOrReplaceChart('ownershipChart', {
+      type: 'bar',
+      data: {
+        labels: ['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Silent'],
+        datasets: [{
+          label: 'Ownership %',
+          data: [97, 96, 90, 78, null],
+          backgroundColor: ['#2a9d8f', '#2a9d8f', '#e9c46a', '#e76f51', '#d9d4c5'],
+          borderRadius: 10,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: tooltipTheme
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            suggestedMax: 100,
+            grid: sharedGrid,
+            ticks: { ...sharedTicks, callback: (v) => v + '%' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: sharedTicks
+          }
+        }
+      }
+    });
+
+    createOrReplaceChart('platformChart', {
+      type: 'bar',
+      data: {
+        labels: ['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Silent'],
+        datasets: [
+          {
+            label: 'Android %',
+            data: [57, null, 60, null, null],
+            backgroundColor: '#264653',
+            borderRadius: 8,
+            borderSkipped: false
+          },
+          {
+            label: 'iOS %',
+            data: [31, 35, null, null, null],
+            backgroundColor: '#e76f51',
+            borderRadius: 8,
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#3f4a49',
+              font: { family: 'Space Grotesk' }
+            }
+          },
+          tooltip: tooltipTheme
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            suggestedMax: 100,
+            grid: sharedGrid,
+            ticks: { ...sharedTicks, callback: (v) => v + '%' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: sharedTicks
+          }
+        }
+      }
+    });
+
+    createOrReplaceChart('screenTimeChart', {
+      type: 'line',
+      data: {
+        labels: ['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Silent'],
+        datasets: [{
+          label: 'Hours/day',
+          data: [9.0, 6.7, 4.2, 3.5, null],
+          borderColor: '#2a9d8f',
+          backgroundColor: 'rgba(42, 157, 143, 0.18)',
+          pointBackgroundColor: '#2a9d8f',
+          pointRadius: 5,
+          pointHoverRadius: 6,
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipTheme,
+            callbacks: {
+              label: (ctx) => ` ${ctx.raw} h/day`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            suggestedMax: 10,
+            grid: sharedGrid,
+            ticks: { ...sharedTicks, callback: (v) => v + 'h' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: sharedTicks
+          }
+        }
+      }
+    });
+
+    createOrReplaceChart('brazilChart', {
+      type: 'bar',
+      data: {
+        labels: ['10-15', '16-24', '25-34', '35-44', '45-59', '60+'],
+        datasets: [
+          {
+            label: 'Use cellphone to access internet (%)',
+            data: [98, 100, 100, 100, 100, 99],
+            backgroundColor: '#2a9d8f',
+            borderRadius: 8,
+            borderSkipped: false
+          },
+          {
+            label: 'Access only via cellphone (%)',
+            data: [66, 47, 49, 56, 68, 80],
+            backgroundColor: '#e9c46a',
+            borderRadius: 8,
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#3f4a49',
+              font: { family: 'Space Grotesk' }
+            }
+          },
+          tooltip: tooltipTheme
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            suggestedMax: 100,
+            grid: sharedGrid,
+            ticks: { ...sharedTicks, callback: (v) => v + '%' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: sharedTicks
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

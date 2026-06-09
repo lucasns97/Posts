@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentes de IA — do texto à ação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fog:#EDF0F4;
+  --ink:#141E2A;
+  --ink-soft:#46556B;
+  --cobalt:#2742E8;
+  --token:#E8920A;
+  --alert:#D8421F;
+  --card:#FFFFFF;
+  --line:#C7CFDA;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--fog);
+  color:var(--ink);
+  overflow:hidden;
+}
+.deck{height:100vh;width:100vw;position:relative}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:6vh 8vw;
+  opacity:0;transform:translateX(40px);
+  transition:opacity .45s ease,transform .45s ease;
+  pointer-events:none;
+  overflow-y:auto;
+}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:auto}
+.slide.prev{transform:translateX(-40px)}
+@media (prefers-reduced-motion: reduce){
+  .slide{transition:opacity .2s ease;transform:none!important}
+}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cobalt);margin-bottom:1.2rem;
+}
+h1{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(2.2rem,6vw,4.6rem);line-height:1.05;letter-spacing:-.02em}
+h2{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(1.6rem,4vw,2.8rem);line-height:1.12;letter-spacing:-.02em;margin-bottom:1.4rem}
+p.lead{font-size:clamp(1rem,1.6vw,1.2rem);color:var(--ink-soft);max-width:62ch;line-height:1.65}
+p.lead + p.lead{margin-top:.9rem}
+strong{color:var(--ink)}
+.accent{color:var(--cobalt)}
+.cards{display:grid;gap:1rem;margin-top:1.8rem}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:1.2rem 1.3rem;
+}
+.card h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:600;margin-bottom:.4rem}
+.card p{font-size:.92rem;color:var(--ink-soft);line-height:1.55}
+.mono{font-family:'IBM Plex Mono',monospace}
+.src{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--ink-soft);margin-top:1.6rem;opacity:.75;line-height:1.6}
+
+/* nav */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 8vw;
+  background:linear-gradient(to top, var(--fog) 60%, transparent);
+}
+.dots{display:flex;gap:.45rem;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink-soft);background:transparent;cursor:pointer;padding:0}
+.dot.on{background:var(--cobalt);border-color:var(--cobalt)}
+.dot:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.navbtns{display:flex;gap:.5rem}
+.nbtn{
+  font-family:'IBM Plex Mono',monospace;font-size:.8rem;
+  border:1.5px solid var(--ink);background:var(--card);color:var(--ink);
+  border-radius:10px;padding:.5rem .95rem;cursor:pointer;
+}
+.nbtn:hover{background:var(--ink);color:var(--fog)}
+.nbtn:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.counter{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-soft)}
+.hint{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft);margin-top:2.2rem}
+
+/* slide 1 cover */
+.cover-tag{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.78rem;
+  border:1.5px solid var(--cobalt);color:var(--cobalt);border-radius:999px;
+  padding:.35rem .9rem;margin-bottom:1.6rem;
+}
+.cover-sub{margin-top:1.4rem}
+
+/* timeline */
+.timeline{display:flex;flex-direction:column;gap:0;margin-top:1.6rem;border-left:2px solid var(--line);padding-left:1.4rem}
+.tl-item{position:relative;padding:.55rem 0}
+.tl-item::before{
+  content:'';position:absolute;left:calc(-1.4rem - 6px);top:1rem;
+  width:10px;height:10px;border-radius:50%;background:var(--cobalt);
+}
+.tl-year{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--cobalt);font-weight:500}
+.tl-item p{font-size:.95rem;color:var(--ink-soft);line-height:1.5;max-width:60ch}
+
+/* loop — signature */
+.loop-wrap{display:flex;gap:3rem;align-items:center;flex-wrap:wrap;margin-top:1.5rem}
+.loop-svg{flex:0 0 auto}
+.loop-legend{flex:1;min-width:260px}
+.loop-step{
+  border:1px solid var(--line);background:var(--card);border-radius:12px;
+  padding:.85rem 1rem;margin-bottom:.7rem;cursor:pointer;transition:border-color .25s,box-shadow .25s;
+}
+.loop-step.on{border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(39,66,232,.12)}
+.loop-step h3{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:600}
+.loop-step p{font-size:.85rem;color:var(--ink-soft);margin-top:.2rem;line-height:1.5}
+.formula{
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(.85rem,1.7vw,1.05rem);
+  background:var(--ink);color:#E9EDF5;border-radius:12px;
+  padding:1rem 1.3rem;margin-top:1.4rem;display:inline-block;line-height:1.7;
+}
+.formula b{color:#8FA2FF;font-weight:500}
+
+/* orchestrator demo */
+.orch{margin-top:1.4rem}
+.orch-run{
+  font-family:'IBM Plex Mono',monospace;font-size:.85rem;
+  border:1.5px solid var(--cobalt);background:var(--cobalt);color:#fff;
+  border-radius:10px;padding:.6rem 1.2rem;cursor:pointer;
+}
+.orch-run:disabled{opacity:.45;cursor:default}
+.orch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem;margin-top:1.1rem}
+.agent{
+  border:1px solid var(--line);background:var(--card);border-radius:12px;
+  padding:.8rem .9rem;transition:border-color .3s, background .3s;
+}
+.agent .a-name{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.agent .a-task{font-size:.85rem;margin-top:.3rem;line-height:1.4}
+.agent .a-status{font-family:'IBM Plex Mono',monospace;font-size:.72rem;margin-top:.55rem;color:var(--ink-soft)}
+.agent.working{border-color:var(--token)}
+.agent.working .a-status{color:var(--token)}
+.agent.done{border-color:#1B9E6B}
+.agent.done .a-status{color:#1B9E6B}
+.orch-result{
+  font-family:'IBM Plex Mono',monospace;font-size:.85rem;margin-top:1rem;
+  color:var(--ink);min-height:1.4em;
+}
+.orch-result a{color:var(--cobalt);font-weight:500;text-underline-offset:3px}
+.orch-result a:hover{color:var(--token)}
+.orch-result a:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+
+/* cost slide */
+.cost-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1.6rem}
+.cost-num{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(1.8rem,3.6vw,2.6rem);color:var(--token)}
+.cost-num.red{color:var(--alert)}
+.cost-card p{font-size:.88rem;color:var(--ink-soft);line-height:1.5;margin-top:.35rem}
+.tokenbar-wrap{margin-top:1.8rem;max-width:560px}
+.tokenbar-label{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-soft);margin-bottom:.4rem;display:flex;justify-content:space-between}
+.tokenbar{height:14px;border-radius:7px;background:var(--card);border:1px solid var(--line);overflow:hidden;margin-bottom:.9rem}
+.tokenbar > div{height:100%;background:var(--cobalt);width:0;transition:width 1.2s ease}
+.tokenbar.t15 > div{background:var(--token)}
+
+/* table-ish comparisons */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.6rem}
+@media(max-width:720px){.duo{grid-template-columns:1fr}}
+.duo .card h3{color:var(--cobalt)}
+
+footer-note{display:block}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 · CAPA -->
+<section class="slide active">
+  <span class="cover-tag">apresentação · v1 · jun 2026</span>
+  <h1>Agentes de IA:<br>do texto <span class="accent">à ação</span></h1>
+  <p class="lead cover-sub">Como modelos de linguagem deixaram de apenas escrever e passaram a <strong>planejar, usar ferramentas e executar trabalho</strong> — e o que isso custa.</p>
+  <p class="hint">→ use as setas do teclado, os botões ou toque para navegar</p>
+</section>
+
+<!-- 2 · ANTES -->
+<section class="slide">
+  <p class="eyebrow">01 · antes do salto</p>
+  <h2>Gerar texto era a parte difícil</h2>
+  <p class="lead">Durante anos, modelos de linguagem serviam para <strong>analisar</strong> texto: classificar, comparar, mapear palavras em espaços numéricos. Gerar texto novo, coerente e longo era uma tarefa pouco eficaz na prática.</p>
+  <p class="lead">As arquiteturas da época liam o texto em sequência, palavra por palavra — difícil de paralelizar, difícil de escalar, fácil de "esquecer" o começo da frase.</p>
+</section>
+
+<!-- 3 · TRANSFORMER -->
+<section class="slide">
+  <p class="eyebrow">02 · 2017 — a virada</p>
+  <h2>"Attention Is All You Need"</h2>
+  <p class="lead">Pesquisadores da Google propõem o <strong>Transformer</strong>: uma arquitetura construída inteiramente sobre o mecanismo de <strong>atenção</strong> — o modelo aprende como cada palavra do texto se relaciona com todas as outras, de uma vez.</p>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="card"><h3>Atenção</h3><p>Entende relações entre palavras sem ler em sequência — o contexto inteiro de uma vez.</p></div>
+    <div class="card"><h3>Paralelização</h3><p>Sem recorrência, o treino roda em paralelo em milhares de GPUs. Treinar fica viável em escala.</p></div>
+    <div class="card"><h3>Leis de escala</h3><p>Descoberta seguinte (2020): mais parâmetros + mais dados + mais computação = mais capacidade, de forma previsível.</p></div>
+  </div>
+  <p class="lead" style="margin-top:1.4rem">A receita estava posta: pegar o Transformer, aumentá-lo, e alimentá-lo com <strong>uma internet inteira de dados</strong>.</p>
+</section>
+
+<!-- 4 · CORRIDA -->
+<section class="slide">
+  <p class="eyebrow">03 · a corrida das LLMs</p>
+  <h2>O modelo grande de linguagem vira commodity</h2>
+  <p class="lead">Nasce o <strong>Large Language Model</strong>. E com ele, uma corrida global: <span class="mono">GPT · Claude · Gemini · DeepSeek · Grok · Qwen · Kimi · Llama...</span></p>
+  <p class="lead">Cada geração mais capaz que a anterior — em matemática, código, raciocínio. Mas todos ainda compartilhavam um limite: <strong>só sabiam escrever</strong>. Pergunta entra, texto sai. Fim.</p>
+</section>
+
+<!-- 5 · O PULO -->
+<section class="slide">
+  <p class="eyebrow">04 · o pulo do gato</p>
+  <h2>De gerar texto a <span class="accent">agir via texto</span></h2>
+  <p class="lead">A sacada: se o modelo escreve qualquer coisa proceduralmente, ele pode escrever <strong>pedidos estruturados</strong>. "Quero gerar uma imagem com estas especificações." "Quero rodar este código." "Quero buscar isto na web."</p>
+  <p class="lead">Um sistema ao redor recebe o pedido, executa em outro lugar, e devolve o resultado. O modelo lê, e continua. Isso tem nome: <strong>tool use</strong> (uso de ferramentas). É a ponte entre linguagem e ação.</p>
+  <div class="formula">texto&nbsp;→&nbsp;<b>pedido de ferramenta</b>&nbsp;→&nbsp;execução externa&nbsp;→&nbsp;<b>resultado</b>&nbsp;→&nbsp;texto</div>
+</section>
+
+<!-- 6 · DEFINIÇÃO + LOOP (signature) -->
+<section class="slide" id="loopSlide">
+  <p class="eyebrow">05 · a definição</p>
+  <h2>O que é um agente, afinal?</h2>
+  <div class="formula">agente = <b>LLM</b> + <b>ferramentas</b> + <b>memória</b> + <b>loop de decisão</b></div>
+  <div class="loop-wrap">
+    <svg class="loop-svg" width="230" height="230" viewBox="0 0 230 230" aria-label="Ciclo do agente: pensa, age, observa">
+      <circle cx="115" cy="115" r="78" fill="none" stroke="var(--line)" stroke-width="2"/>
+      <circle id="loopArc" cx="115" cy="115" r="78" fill="none" stroke="var(--cobalt)" stroke-width="4"
+        stroke-dasharray="163 490" stroke-linecap="round" transform="rotate(-90 115 115)"/>
+      <g font-family="IBM Plex Mono" font-size="13" fill="var(--ink)" text-anchor="middle">
+        <text id="lblPensa" x="115" y="24" font-weight="600">pensa</text>
+        <text id="lblAge" x="208" y="160">age</text>
+        <text id="lblObserva" x="26" y="160">observa</text>
+      </g>
+      <text x="115" y="112" text-anchor="middle" font-family="Sora" font-size="14" font-weight="600" fill="var(--ink)">objetivo</text>
+      <text x="115" y="130" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="var(--ink-soft)">até cumprir</text>
+    </svg>
+    <div class="loop-legend">
+      <div class="loop-step on" data-i="0"><h3>1 · Pensa</h3><p>Analisa o objetivo e o que já sabe; decide o próximo passo na hora — ninguém pré-programou o caminho.</p></div>
+      <div class="loop-step" data-i="1"><h3>2 · Age</h3><p>Usa uma ferramenta: busca, código, e-mail, API, banco de dados, outro agente.</p></div>
+      <div class="loop-step" data-i="2"><h3>3 · Observa</h3><p>Lê o resultado, ajusta o plano e repete — até o objetivo estar cumprido.</p></div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:1.3rem">Detalhe importante: <strong>o LLM sozinho não é o agente</strong>. O agente é a estrutura ao redor dele. Chatbot segue fluxo de quem o programou; o agente decide o próprio caminho.</p>
+</section>
+
+<!-- 7 · MCP -->
+<section class="slide">
+  <p class="eyebrow">06 · o conector universal</p>
+  <h2>MCP: o "USB-C" da IA</h2>
+  <p class="lead">Para agir, o agente precisa conversar com serviços externos. Antes, cada par modelo↔ferramenta exigia uma integração própria (o problema M×N). O <strong>Model Context Protocol</strong> define um contrato único: como a IA pede, como o serviço responde.</p>
+  <div class="timeline">
+    <div class="tl-item"><span class="tl-year">nov 2024</span><p>Anthropic lança o MCP, inspirado no Language Server Protocol da Microsoft.</p></div>
+    <div class="tl-item"><span class="tl-year">mar–abr 2025</span><p>OpenAI e Google DeepMind adotam o padrão.</p></div>
+    <div class="tl-item"><span class="tl-year">dez 2025</span><p>Anthropic doa o MCP à Agentic AI Foundation (Linux Foundation), com ~170 organizações.</p></div>
+    <div class="tl-item"><span class="tl-year">2026</span><p>SDKs passam de 110 milhões de downloads mensais. Vira infraestrutura neutra da indústria.</p></div>
+  </div>
+  <p class="lead" style="margin-top:1.3rem">Implemente uma vez, conecte a qualquer IA. O conhecimento não fica preso a nenhum fornecedor.</p>
+</section>
+
+<!-- 8 · MULTI-AGENTE (demo) -->
+<section class="slide">
+  <p class="eyebrow">07 · orquestração</p>
+  <h2>Agentes orquestrando agentes</h2>
+  <p class="lead">Um agente pode delegar tarefas a outros agentes — em paralelo, recursivamente. Exemplo real: <em>"qual a distribuição de acesso ao smartphone por geração? quero uma apresentação web"</em>.</p>
+  <div class="orch">
+    <button class="orch-run" id="runOrch">▶ rodar orquestração</button>
+    <div class="orch-grid" id="orchGrid">
+      <div class="agent" data-d="0"><div class="a-name">orquestrador</div><div class="a-task">Quebra o problema, delega, sintetiza</div><div class="a-status">aguardando</div></div>
+      <div class="agent" data-d="1"><div class="a-name">planejador</div><div class="a-task">Define escopo: gerações, fontes, formato</div><div class="a-status">aguardando</div></div>
+      <div class="agent" data-d="2"><div class="a-name">pesquisador ×3</div><div class="a-task">Vendas/ano · datas das gerações · estudos (em paralelo)</div><div class="a-status">aguardando</div></div>
+      <div class="agent" data-d="3"><div class="a-name">revisor</div><div class="a-task">Consolida e valida os achados</div><div class="a-status">aguardando</div></div>
+      <div class="agent" data-d="4"><div class="a-name">apresentador</div><div class="a-task">Transforma tudo em HTML</div><div class="a-status">aguardando</div></div>
+    </div>
+    <div class="orch-result" id="orchResult"></div>
+  </div>
+  <p class="lead" style="margin-top:.8rem">No padrão <strong>orquestrador-trabalhador</strong> da Anthropic (Claude Research), essa arquitetura superou um agente único em <strong>90,2%</strong> nas avaliações internas de pesquisa.</p>
+</section>
+
+<!-- 9 · QUANDO USAR -->
+<section class="slide">
+  <p class="eyebrow">08 · arquitetura segue a tarefa</p>
+  <h2>Multi-agente não é resposta para tudo</h2>
+  <div class="duo">
+    <div class="card"><h3>Brilha quando…</h3><p>…o problema se divide em frentes <strong>paralelas e independentes</strong>: pesquisa ampla, comparações, levantamentos. Regra de bolso: 1 agente para um fato simples · 2–4 para comparações · 10+ para pesquisa complexa.</p></div>
+    <div class="card"><h3>Decepciona quando…</h3><p>…as tarefas são <strong>fortemente interdependentes</strong> — como boa parte do desenvolvimento de software, em que cada passo depende do anterior e o contexto compartilhado importa.</p></div>
+  </div>
+  <p class="lead" style="margin-top:1.4rem">E há um preço de entrada: um sistema multi-agente consome <strong>~15× mais tokens</strong> que uma conversa comum. O que nos leva ao próximo ponto.</p>
+</section>
+
+<!-- 10 · CUSTO -->
+<section class="slide" id="costSlide">
+  <p class="eyebrow">09 · a conta chegou</p>
+  <h2>O custo: do subsídio ao <span style="color:var(--token)">choque de gastos</span></h2>
+  <p class="lead">No começo, preços muito abaixo do custo real, sustentados a prejuízo. Criada a dependência — inclusive pela pressão por prazos cada vez mais curtos — os preços se reajustam. Em 2026, a fase é de choque:</p>
+  <div class="cost-grid">
+    <div class="card cost-card"><div class="cost-num red">US$ 500 mi</div><p>gastos por uma única empresa em um mês com Claude, sem limites de uso por funcionário (Axios, 2026).</p></div>
+    <div class="card cost-card"><div class="cost-num">&lt; 1 semestre</div><p>Uber esgotou em abril o orçamento de 2026 inteiro para Claude Code. "A ligação não está lá" entre uso e retorno, disse o executivo Andrew Macdonald.</p></div>
+    <div class="card cost-card"><div class="cost-num red">80%+</div><p>das empresas que adotaram IA não registraram ganhos mensuráveis de produtividade (NBER, fev 2026).</p></div>
+    <div class="card cost-card"><div class="cost-num">5–10×</div><p>custo de tokens em produção vs. em testes (a16z) — e só 23% das organizações têm visibilidade granular dos custos (Deloitte, 2026).</p></div>
+  </div>
+  <div class="tokenbar-wrap">
+    <div class="tokenbar-label"><span>chat comum</span><span>1×</span></div>
+    <div class="tokenbar t1"><div data-w="6.6%"></div></div>
+    <div class="tokenbar-label"><span>sistema multi-agente</span><span>~15×</span></div>
+    <div class="tokenbar t15"><div data-w="100%"></div></div>
+  </div>
+  <p class="lead" style="margin-top:1.2rem">Houve até incentivo invertido: a Amazon encerrou um "placar" interno que ranqueava quem mais consumia tokens — uso pelo uso, sem ganho claro. A lição: <strong>agente bom é agente com orçamento, limite e métrica de retorno.</strong></p>
+</section>
+
+<!-- 11 · TRABALHO -->
+<section class="slide">
+  <p class="eyebrow">10 · o trabalho muda</p>
+  <h2>De executor a <span class="accent">orquestrador</span></h2>
+  <p class="lead">Na prática: reescrever textos virou pedir código, que virou agente no editor, que virou <strong>comandar e revisar</strong> — a IA age com autonomia crescente, o humano desenha, planeja e valida.</p>
+  <p class="lead">Seu trabalho passa a ser definir o problema, dividir a tarefa e julgar o resultado — enquanto agentes cobrem o braçal que exige conhecimento específico de várias áreas: estatística, pesquisa, programação, design.</p>
+  <p class="lead">O Relatório Internacional de Segurança de IA (2026) confirma o estágio: agentes já completam tarefas de engenharia com pouca supervisão, mas <strong>ainda complementam — não substituem — humanos</strong> no planejamento longo.</p>
+</section>
+
+<!-- 12 · SEGURANÇA -->
+<section class="slide">
+  <p class="eyebrow">11 · segurança</p>
+  <h2>Autonomia maior, supervisão mais difícil</h2>
+  <p class="lead">Pela segunda vez, a comunidade científica global se reuniu para avaliar os riscos: o <strong>International AI Safety Report 2026</strong> (fev/2026), liderado por Yoshua Bengio, com 100+ especialistas e apoio de 30+ países.</p>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="card"><h3>Uso malicioso</h3><p>IA já é usada ativamente em ciberataques; um agente ficou no top 5% de uma grande competição de cibersegurança.</p></div>
+    <div class="card"><h3>Mau funcionamento</h3><p>Agentes ampliam riscos de confiabilidade: com mais autonomia, fica mais difícil intervir antes que a falha cause dano.</p></div>
+    <div class="card"><h3>Riscos sistêmicos</h3><p>Impactos amplos: mercado de trabalho, autonomia humana, concentração de poder.</p></div>
+  </div>
+  <p class="lead" style="margin-top:1.4rem">A resposta em construção: avaliações de modelos, limiares de capacidades perigosas e compromissos "se-então" — com frameworks de gestão de risco ainda imaturos.</p>
+</section>
+
+<!-- 13 · FECHAMENTO -->
+<section class="slide">
+  <p class="eyebrow">12 · síntese</p>
+  <h2>Em uma frase</h2>
+  <div class="formula" style="font-size:clamp(.95rem,2vw,1.25rem)">Um agente é um <b>LLM em um loop</b>, com <b>ferramentas</b> e <b>memória</b>,<br>que persegue um <b>objetivo</b> — sob <b>orçamento</b> e <b>supervisão</b>.</div>
+  <p class="lead" style="margin-top:1.6rem">A tecnologia continua evoluindo; termos e ferramentas mudam a cada mês. O que permanece: quem entende o <strong>loop</strong>, o <strong>protocolo</strong> e o <strong>custo</strong> consegue acompanhar qualquer novidade que vier.</p>
+  <p class="src">fontes · Vaswani et al., "Attention Is All You Need" (2017) · Anthropic, "Building Effective Agents" e "How we built our multi-agent research system" · Linux Foundation / Agentic AI Foundation (2025–26) · InfoMoney/Axios (custos, 2026) · NBER (fev 2026) · International AI Safety Report 2026 (Bengio et al.)</p>
+</section>
+
+</div>
+
+<nav class="nav" aria-label="Navegação da apresentação">
+  <span class="counter" id="counter">1 / 13</span>
+  <div class="dots" id="dots"></div>
+  <div class="navbtns">
+    <button class="nbtn" id="prevBtn" aria-label="Slide anterior">←</button>
+    <button class="nbtn" id="nextBtn" aria-label="Próximo slide">→</button>
+  </div>
+</nav>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('button');
+  d.className='dot'+(i===0?' on':'');
+  d.setAttribute('aria-label','Ir para slide '+(i+1));
+  d.onclick=()=>go(i);
+  dotsEl.appendChild(d);
+});
+const dots=[...dotsEl.children];
+function go(n){
+  if(n<0||n>=slides.length)return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.toggle('prev',n>cur);
+  cur=n;
+  slides.forEach((s,i)=>{s.classList.toggle('prev',i<cur);});
+  slides[cur].classList.add('active');
+  dots.forEach((d,i)=>d.classList.toggle('on',i===cur));
+  document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+  if(slides[cur].id==='costSlide')animateBars();
+  if(slides[cur].id==='loopSlide')startLoop();else stopLoop();
+}
+document.getElementById('nextBtn').onclick=()=>go(cur+1);
+document.getElementById('prevBtn').onclick=()=>go(cur-1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')go(cur+1);
+  if(e.key==='ArrowLeft')go(cur-1);
+});
+// swipe
+let tx=null;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{
+  if(tx===null)return;
+  const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>50)go(cur+(dx<0?1:-1));
+  tx=null;
+},{passive:true});
+
+// loop animation (signature)
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const arc=document.getElementById('loopArc');
+const steps=[...document.querySelectorAll('.loop-step')];
+let loopTimer=null,loopI=0;
+const offsets=[0,-163,-326];
+function setLoopStep(i){
+  loopI=i;
+  arc.setAttribute('stroke-dashoffset',offsets[i]);
+  steps.forEach((s,j)=>s.classList.toggle('on',j===i));
+}
+steps.forEach(s=>{
+  s.onclick=()=>{stopLoop();setLoopStep(+s.dataset.i);};
+});
+function startLoop(){
+  if(reduceMotion||loopTimer)return;
+  loopTimer=setInterval(()=>setLoopStep((loopI+1)%3),1600);
+}
+function stopLoop(){clearInterval(loopTimer);loopTimer=null;}
+
+// orchestrator demo
+const runBtn=document.getElementById('runOrch');
+const agents=[...document.querySelectorAll('#orchGrid .agent')];
+const orchResult=document.getElementById('orchResult');
+runBtn.onclick=()=>{
+  runBtn.disabled=true;orchResult.textContent='';
+  agents.forEach(a=>{a.classList.remove('working','done');a.querySelector('.a-status').textContent='aguardando';});
+  const seq=[[0,'delegando…'],[1,'planejando…'],[2,'pesquisando ×3…'],[3,'revisando…'],[4,'gerando HTML…']];
+  let t=0;
+  seq.forEach(([i,msg],k)=>{
+    setTimeout(()=>{agents[i].classList.add('working');agents[i].querySelector('.a-status').textContent=msg;},t);
+    t+= i===2?1700:1000;
+    setTimeout(()=>{agents[i].classList.remove('working');agents[i].classList.add('done');agents[i].querySelector('.a-status').textContent='✓ concluído';},t);
+  });
+  setTimeout(()=>{
+    agents[0].querySelector('.a-status').textContent='✓ sintetizado';
+    orchResult.innerHTML='→ entregue: <a href="smartphone-per-gen.html" target="_blank" rel="noopener">smartphone-per-gen.html ↗</a>';
+    runBtn.disabled=false;runBtn.textContent='↻ rodar de novo';
+  },t+400);
+};
+
+// cost bars
+let barsDone=false;
+function animateBars(){
+  if(barsDone)return;barsDone=true;
+  document.querySelectorAll('.tokenbar > div').forEach(b=>{
+    requestAnimationFrame(()=>{b.style.width=b.dataset.w;});
+  });
+}
+</script>
+</body>
+</html>
